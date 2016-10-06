@@ -21,6 +21,7 @@ int ChoiceArray[1];
 int DegreeArray[1];
 int SpeedArray[1];
 int AutoStep = 0;
+int Leftspeed, Rightspeed;
 bool firing, driving, turning, run;
 
 float gyroBias(long totalBias =0)
@@ -85,13 +86,61 @@ void fire()
 	motorspeed("scissor", 0);
 }
 
-void drive(int distance, int speed)
+void drive(int distance, int speed, int error = 10)
 {
-
+	resetMotorEncoder(FrontLeft);
+  resetMotorEncoder(FrontRight);
+  Rightspeed = speed;
+  Leftspeed = speed;
+	do
+	{
+		motorspeed("left", Leftspeed);
+		motorspeed("right", Rightspeed);
+		if(getMotorEncoder(FrontLeft)>getMotorEncoder(FrontRight))
+		{
+			if(Rightspeed<speed)
+				Rightspeed++;
+			else
+				Leftspeed--;
+		}
+		else
+		{
+			if(Leftspeed<speed)
+				Leftspeed++;
+			else
+				Rightspeed--;
+		}
+	}while(abs(getMotorEncoder(FrontLeft)-distance)>error);
+	motorspeed("left", 0);
+	motorspeed("right", 0);
 }
 
-void turn(int angle, int speed)
+void turn(int angle, int speed, int error = 7)
 {
+	SensorValue[Yaw] = 0;
+	Rightspeed = speed;
+  Leftspeed = -speed;
+  do
+  {
+		motorspeed("left", Leftspeed);
+		motorspeed("right", Rightspeed);
+		if(getMotorEncoder(FrontLeft)>getMotorEncoder(FrontRight))
+		{
+			if(Rightspeed<speed)
+				Rightspeed++;
+			else
+				Leftspeed++;
+		}
+		else
+		{
+			if(Leftspeed> -speed)
+				Leftspeed--;
+			else
+				Rightspeed--;
+		}
+  }while(angle - SensorValue[Yaw]>error);
+  motorspeed("left", 0);
+	motorspeed("right", 0);
 }
 
 void AutoFunction(int choice, int degree, int speed)//Gabe
